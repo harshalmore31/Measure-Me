@@ -12,19 +12,16 @@ import { Camera, Upload, X } from 'lucide-react'
 interface StudentRegistrationFormProps {
   onClose: () => void
   initialData?: {
+    id?: string
     name: string
     roll_number: string
     standard: string
     division: string
+    profile_photo?: string
+    height?: number
+    weight?: number
   }
-  onSubmit: (data: {
-    name: string
-    roll_number: string
-    standard: string
-    division: string
-    profile_photo: File | null
-    training_images: File[]
-  }) => void
+  onSubmit: (data: FormData) => void
 }
 
 export default function StudentRegistrationForm({ onClose, initialData, onSubmit }: StudentRegistrationFormProps) {
@@ -36,6 +33,8 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
     division: initialData?.division || '',
     profile_photo: null as File | null,
     training_images: [] as File[],
+    height: initialData?.height || '',
+    weight: initialData?.weight || '',
   })
   const [capturedImages, setCapturedImages] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -60,7 +59,24 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    const submitData = new FormData()
+    submitData.append('name', formData.name)
+    submitData.append('roll_number', formData.roll_number)
+    submitData.append('standard', formData.standard)
+    submitData.append('division', formData.division)
+    if (formData.profile_photo) {
+      submitData.append('profile_photo', formData.profile_photo)
+    }
+    if (formData.height) {
+      submitData.append('height', formData.height.toString())
+    }
+    if (formData.weight) {
+      submitData.append('weight', formData.weight.toString())
+    }
+    formData.training_images.forEach((image) => {
+      submitData.append('training_images', image)
+    })
+    onSubmit(submitData)
   }
 
   const startCamera = async () => {
@@ -172,6 +188,28 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
                   </Select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    name="height"
+                    type="number"
+                    value={formData.height}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input
+                    id="weight"
+                    name="weight"
+                    type="number"
+                    value={formData.weight}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
             </div>
           )}
           
@@ -185,7 +223,6 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
                   type="file"
                   onChange={handleFileChange}
                   accept="image/*"
-                  required
                 />
               </div>
             </div>

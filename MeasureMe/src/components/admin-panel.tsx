@@ -59,8 +59,19 @@ export default function AdminPanel() {
     }
   }
 
-  const handleAddStudent = () => {
-    setIsRegistrationFormOpen(true)
+  const handleAddStudent = async (formData: FormData) => {
+    try {
+      const response = await axios.post("http://localhost:8000/api/students/", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      console.log("New student added:", response.data)
+      setIsRegistrationFormOpen(false)
+      fetchStudents()  // Refresh the student list
+    } catch (error) {
+      console.error("Error adding student:", error)
+    }
   }
 
   const handleCloseRegistrationForm = () => {
@@ -77,11 +88,16 @@ export default function AdminPanel() {
     }
   }
 
-  const handleUpdateStudent = async (updatedStudent: Student) => {
+  const handleUpdateStudent = async (id: string, formData: FormData) => {
     try {
-      await axios.put(`http://localhost:8000/api/students/${updatedStudent.id}/`, updatedStudent)
-      fetchStudents()
+      const response = await axios.put(`http://localhost:8000/api/students/${id}/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      console.log("Student updated:", response.data)
       setEditingStudent(null)
+      fetchStudents()
     } catch (error) {
       console.error("Error updating student:", error)
     }
@@ -134,7 +150,7 @@ export default function AdminPanel() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64"
               />
-              <Button onClick={handleAddStudent}>
+              <Button onClick={() => setIsRegistrationFormOpen(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Student
               </Button>
@@ -251,12 +267,8 @@ export default function AdminPanel() {
       <Dialog open={isRegistrationFormOpen} onOpenChange={setIsRegistrationFormOpen}>
         <DialogContent>
           <StudentRegistrationForm 
-            onClose={handleCloseRegistrationForm} 
-            onSubmit={(data) => {
-              // Handle new student submission
-              console.log("New student data:", data);
-              handleCloseRegistrationForm();
-            }}
+            onClose={() => setIsRegistrationFormOpen(false)}
+            onSubmit={handleAddStudent}
           />
         </DialogContent>
       </Dialog>
@@ -267,18 +279,7 @@ export default function AdminPanel() {
             <StudentRegistrationForm
               onClose={() => setEditingStudent(null)}
               initialData={editingStudent}
-              onSubmit={(data) => {
-                const updatedStudent: Student = {
-                  ...editingStudent,
-                  ...data,
-                  profile_photo: typeof data.profile_photo === 'string' ? data.profile_photo : editingStudent.profile_photo,
-                  training_images: [
-                    ...editingStudent.training_images,
-                    ...(data.training_images as File[]).map(file => URL.createObjectURL(file))
-                  ]
-                };
-                handleUpdateStudent(updatedStudent);
-              }}
+              onSubmit={(formData) => handleUpdateStudent(editingStudent.id, formData)}
             />
           </DialogContent>
         </Dialog>
