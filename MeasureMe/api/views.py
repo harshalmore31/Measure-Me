@@ -5,13 +5,18 @@ from django.core.files.base import ContentFile
 import logging
 
 from .models import Student, TrainingImage
-from .serializers import StudentSerializer
+from .serializers import StudentSerializer, TrainingImageSerializer
 
 logger = logging.getLogger(__name__)
 
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
 
     def create(self, request, *args, **kwargs):
         logger.info(f"Received data: {request.data}")
@@ -21,12 +26,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         student = serializer.save()
 
-        # Save profile photo
         if 'profile_photo' in request.FILES:
             student.profile_photo = request.FILES['profile_photo']
             student.save()
 
-        # Save training images
         if 'training_images' in request.FILES:
             for image in request.FILES.getlist('training_images'):
                 TrainingImage.objects.create(student=student, image=image)
@@ -50,3 +53,13 @@ class StudentViewSet(viewsets.ModelViewSet):
                 TrainingImage.objects.create(student=instance, image=image)
 
         return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        logger.info(f"Returning students: {serializer.data}")
+        return Response(serializer.data)
+
+class TrainingImageViewSet(viewsets.ModelViewSet):
+    queryset = TrainingImage.objects.all()
+    serializer_class = TrainingImageSerializer

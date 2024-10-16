@@ -3,12 +3,6 @@
 import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,15 +25,14 @@ interface Student {
   standard: string;
   division: string;
   profile_photo: string;
+  height: number | null;
+  weight: number | null;
   training_images: string[];
-  height: number;
-  weight: number;
 }
 
 type SortKey = 'name' | 'roll_number' | 'standard' | 'division';
 
 export default function AdminPanel() {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [students, setStudents] = useState<Student[]>([])
   const [isRegistrationFormOpen, setIsRegistrationFormOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -53,6 +46,7 @@ export default function AdminPanel() {
   const fetchStudents = async () => {
     try {
       const response = await axios.get<Student[]>("http://localhost:8000/api/students/")
+      console.log("Fetched students:", response.data)
       setStudents(response.data)
     } catch (error) {
       console.error("Error fetching students:", error)
@@ -68,15 +62,10 @@ export default function AdminPanel() {
       })
       console.log("New student added:", response.data)
       setIsRegistrationFormOpen(false)
-      fetchStudents()  // Refresh the student list
+      fetchStudents()
     } catch (error) {
       console.error("Error adding student:", error)
     }
-  }
-
-  const handleCloseRegistrationForm = () => {
-    setIsRegistrationFormOpen(false)
-    fetchStudents()
   }
 
   const handleDeleteStudent = async (id: string) => {
@@ -124,16 +113,16 @@ export default function AdminPanel() {
     student.roll_number.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Add a new function to calculate average BMI
   const calculateAverageBMI = () => {
     if (students.length === 0) return "N/A";
-    const totalBMI = students.reduce((sum, student) => {
-      // Assuming each student has height (in cm) and weight (in kg) properties
-      const heightInMeters = student.height / 100;
-      const bmi = student.weight / (heightInMeters * heightInMeters);
+    const validStudents = students.filter(student => student.height && student.weight);
+    if (validStudents.length === 0) return "N/A";
+    const totalBMI = validStudents.reduce((sum, student) => {
+      const heightInMeters = student.height! / 100;
+      const bmi = student.weight! / (heightInMeters * heightInMeters);
       return sum + bmi;
     }, 0);
-    return (totalBMI / students.length).toFixed(1);
+    return (totalBMI / validStudents.length).toFixed(1);
   };
 
   return (
@@ -192,22 +181,12 @@ export default function AdminPanel() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                      Student
-                      <ChevronsUpDown className="ml-2 h-4 w-4 inline-block" />
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('roll_number')}>
-                      Roll Number
-                      <ChevronsUpDown className="ml-2 h-4 w-4 inline-block" />
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('standard')}>
-                      Standard
-                      <ChevronsUpDown className="ml-2 h-4 w-4 inline-block" />
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('division')}>
-                      Division
-                      <ChevronsUpDown className="ml-2 h-4 w-4 inline-block" />
-                    </TableHead>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Roll Number</TableHead>
+                    <TableHead>Standard</TableHead>
+                    <TableHead>Division</TableHead>
+                    <TableHead>Height (cm)</TableHead>
+                    <TableHead>Weight (kg)</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -226,28 +205,49 @@ export default function AdminPanel() {
                       <TableCell>{student.roll_number}</TableCell>
                       <TableCell>{student.standard}</TableCell>
                       <TableCell>{student.division}</TableCell>
+                      <TableCell>{student.height ?? 'N/A'}</TableCell>
+                      <TableCell>{student.weight ?? 'N/A'}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => setEditingStudent(student)}>
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteStudent(student.id)}>
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <ImageIcon className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-3xl">
-                            <h3 className="text-lg font-semibold mb-4">Training Images for {student.name}</h3>
-                            <div className="grid grid-cols-3 gap-4">
-                              {student.training_images.map((image, index) => (
-                                <img key={index} src={image} alt={`Training image ${index + 1}`} className="w-full h-auto rounded-md" />
-                              ))}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-black text-white hover:bg-gray-800"
+                            onClick={() => setEditingStudent(student)}
+                          >
+                            <PencilIcon className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-black text-white hover:bg-gray-800"
+                            onClick={() => handleDeleteStudent(student.id)}
+                          >
+                            <TrashIcon className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-black text-white hover:bg-gray-800"
+                              >
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                Images
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <h3 className="text-lg font-semibold mb-4">Training Images for {student.name}</h3>
+                              <div className="grid grid-cols-3 gap-4">
+                                {student.training_images.map((image, index) => (
+                                  <img key={index} src={image} alt={`Training image ${index + 1}`} className="w-full h-auto rounded-md" />
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -257,12 +257,6 @@ export default function AdminPanel() {
           </Card>
         </div>
       </main>
-
-      <footer className="bg-[#044149] text-white py-4">
-        <div className="max-w-[calc(100%-120px)] mx-auto text-center">
-          © 2024 VIT-Mumbai. All rights reserved
-        </div>
-      </footer>
 
       <Dialog open={isRegistrationFormOpen} onOpenChange={setIsRegistrationFormOpen}>
         <DialogContent>
