@@ -5,12 +5,13 @@ import StudentProfile from "../components/StudentProfile"
 import PageFooter from "../components/PageFooter"
 import HeightChart from "./heightchart"
 import WeightChart from "./weightchart"
+import AdminPanel from "./admin-panel"
 
 export default function SchoolMeasurementApp() {
   const [bmi, setBMI] = useState(0)
   const [height, setHeight] = useState(0)
   const [weight, setWeight] = useState(0)
-  const [view, setView] = useState('main') // 'main', 'height', or 'weight'
+  const [view, setView] = useState('main') // 'main', 'height', 'weight', or 'admin'
 
   useEffect(() => {
     // Simulating random data
@@ -30,6 +31,8 @@ export default function SchoolMeasurementApp() {
         return <HeightChart onBack={() => setView('main')} />
       case 'weight':
         return <WeightChart onBack={() => setView('main')} />
+      case 'admin':
+        return <AdminPanel />
       default:
         return (
           <div className="grid md:grid-cols-2 gap-6">
@@ -49,11 +52,14 @@ export default function SchoolMeasurementApp() {
   return (
     <div className="flex flex-col min-h-screen w-full">
       <header className="w-full">
-        <NavigationHeader />
+        <NavigationHeader 
+          onAdminPanelClick={() => setView('admin')} 
+          onHomeClick={() => setView('main')}
+        />
       </header>
       
       <main className="flex-grow w-full bg-white">
-        <div className="px-[190px] py-6 min-h-[calc(100vh-64px-56px)]"> {/* Adjust these values based on your header and footer heights */}
+        <div className="px-[190px] py-6 min-h-[calc(100vh-64px-56px)]">
           {view === 'main' && (
             <>
               <h2 className="text-2xl font-bold mb-2">School HW Measurement Tracking System</h2>

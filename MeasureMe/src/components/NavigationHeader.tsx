@@ -7,15 +7,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export default function Header() {
+interface NavigationHeaderProps {
+  onAdminPanelClick: () => void;
+  onHomeClick: () => void;
+}
+
+export default function NavigationHeader({ onAdminPanelClick, onHomeClick }: NavigationHeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   return (
     <header className="bg-[#044149] text-white w-full">
       <div className="px-[190px] py-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Measure Me</h1>
+        <h1 className="text-2xl font-bold cursor-pointer" onClick={onHomeClick}>Measure Me</h1>
         <nav className="flex gap-6 items-center">
-          <a href="#" className="relative group text-white hover:text-white">
+          <a href="#" className="relative group text-white hover:text-white" onClick={onAdminPanelClick}>
             Admin Panel
             <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-[#FFFB00] transition-all group-hover:w-full"></span>
           </a>
