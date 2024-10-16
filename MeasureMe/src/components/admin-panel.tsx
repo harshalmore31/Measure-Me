@@ -32,6 +32,8 @@ interface Student {
   division: string;
   profile_photo: string;
   training_images: string[];
+  height: number;
+  weight: number;
 }
 
 type SortKey = 'name' | 'roll_number' | 'standard' | 'division';
@@ -106,6 +108,18 @@ export default function AdminPanel() {
     student.roll_number.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Add a new function to calculate average BMI
+  const calculateAverageBMI = () => {
+    if (students.length === 0) return "N/A";
+    const totalBMI = students.reduce((sum, student) => {
+      // Assuming each student has height (in cm) and weight (in kg) properties
+      const heightInMeters = student.height / 100;
+      const bmi = student.weight / (heightInMeters * heightInMeters);
+      return sum + bmi;
+    }, 0);
+    return (totalBMI / students.length).toFixed(1);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <main className="flex-grow py-6">
@@ -148,15 +162,11 @@ export default function AdminPanel() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Average Standard</CardTitle>
-                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Average BMI</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {students.length > 0
-                    ? (students.reduce((sum, student) => sum + parseInt(student.standard), 0) / students.length).toFixed(1)
-                    : "N/A"}
-                </div>
+                <div className="text-2xl font-bold">{calculateAverageBMI()}</div>
               </CardContent>
             </Card>
           </div>
@@ -240,7 +250,14 @@ export default function AdminPanel() {
 
       <Dialog open={isRegistrationFormOpen} onOpenChange={setIsRegistrationFormOpen}>
         <DialogContent>
-          <StudentRegistrationForm onClose={handleCloseRegistrationForm} />
+          <StudentRegistrationForm 
+            onClose={handleCloseRegistrationForm} 
+            onSubmit={(data) => {
+              // Handle new student submission
+              console.log("New student data:", data);
+              handleCloseRegistrationForm();
+            }}
+          />
         </DialogContent>
       </Dialog>
 
@@ -250,7 +267,18 @@ export default function AdminPanel() {
             <StudentRegistrationForm
               onClose={() => setEditingStudent(null)}
               initialData={editingStudent}
-              onSubmit={(data) => handleUpdateStudent({ ...editingStudent, ...data } as Student)}
+              onSubmit={(data) => {
+                const updatedStudent: Student = {
+                  ...editingStudent,
+                  ...data,
+                  profile_photo: typeof data.profile_photo === 'string' ? data.profile_photo : editingStudent.profile_photo,
+                  training_images: [
+                    ...editingStudent.training_images,
+                    ...(data.training_images as File[]).map(file => URL.createObjectURL(file))
+                  ]
+                };
+                handleUpdateStudent(updatedStudent);
+              }}
             />
           </DialogContent>
         </Dialog>

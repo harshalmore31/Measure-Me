@@ -7,22 +7,24 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Camera, Upload } from 'lucide-react'
-import axios from 'axios'
+import { Camera, Upload, X } from 'lucide-react'
 
 interface StudentRegistrationFormProps {
-  onClose: () => void;
-  initialData?: Partial<Student>;
-  onSubmit?: (data: Partial<Student>) => void;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  roll_number: string;
-  standard: string;
-  division: string;
-  profile_photo: string;
+  onClose: () => void
+  initialData?: {
+    name: string
+    roll_number: string
+    standard: string
+    division: string
+  }
+  onSubmit: (data: {
+    name: string
+    roll_number: string
+    standard: string
+    division: string
+    profile_photo: File | null
+    training_images: File[]
+  }) => void
 }
 
 export default function StudentRegistrationForm({ onClose, initialData, onSubmit }: StudentRegistrationFormProps) {
@@ -33,13 +35,13 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
     standard: initialData?.standard || '',
     division: initialData?.division || '',
     profile_photo: null as File | null,
-    trainingImages: [] as File[],
+    training_images: [] as File[],
   })
   const [capturedImages, setCapturedImages] = useState<string[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prevData => ({ ...prevData, [name]: value }))
   }
@@ -48,62 +50,17 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
     const { name, files } = e.target
     if (name === 'profile_photo') {
       setFormData(prevData => ({ ...prevData, [name]: files?.[0] || null }))
-    } else if (name === 'trainingImages' && files) {
-      setFormData(prevData => ({ ...prevData, [name]: [...prevData.trainingImages, ...Array.from(files)] }))
+    } else if (name === 'training_images' && files) {
+      setFormData(prevData => ({ ...prevData, [name]: [...prevData.training_images, ...Array.from(files)] }))
     }
   }
 
-  const handleNext = () => {
-    setStep(prevStep => prevStep + 1)
-  }
+  const handleNext = () => setStep(prevStep => prevStep + 1)
+  const handlePrevious = () => setStep(prevStep => prevStep - 1)
 
-  const handlePrevious = () => {
-    setStep(prevStep => prevStep - 1)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const allTrainingImages = [...formData.trainingImages, ...capturedImages.map(dataUrl => {
-      const arr = dataUrl.split(',')
-      const mime = arr[0].match(/:(.*?);/)![1]
-      const bstr = atob(arr[1])
-      let n = bstr.length
-      const u8arr = new Uint8Array(n)
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n)
-      }
-      return new File([u8arr], `captured_image_${n}.jpg`, { type: mime })
-    })]
-
-    try {
-      const data = new FormData()
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && key !== 'trainingImages') {
-          data.append(key, value.toString())
-        }
-      })
-      if (formData.profile_photo) {
-        data.append('profile_photo', formData.profile_photo)
-      }
-      allTrainingImages.forEach((image, index) => {
-        data.append(`training_images`, image)
-      })
-
-      if (initialData && onSubmit) {
-        onSubmit(Object.fromEntries(data))
-      } else {
-        const response = await axios.post('http://localhost:8000/api/students/', data, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        console.log('Student registered successfully:', response.data)
-      }
-
-      onClose()
-    } catch (error) {
-      console.error('Error submitting form:', error)
-    }
+    onSubmit(formData)
   }
 
   const startCamera = async () => {
@@ -131,14 +88,24 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
   }
 
   return (
-    <Card>
+    <Card className="relative">
+      <Button
+        className="absolute top-2 right-2 bg-black text-white "
+        size="sm"
+        onClick={onClose}
+      >
+        <X className="h-5 w-5" />
+        <span className="sr-only">Close</span>
+      </Button>
+      
       <CardHeader>
-        <CardTitle>Student Registration</CardTitle>
+        <CardTitle>{initialData ? "Edit Student" : "Add New Student"}</CardTitle>
         <CardDescription>Register a student for height and weight tracking</CardDescription>
       </CardHeader>
+
       <CardContent>
         <div className="mb-8 px-4">
-          <div className="flex justify-between mb-2">
+          <div className="flex justify-between mb-2">   
             {[1, 2, 3].map((i) => (
               <div key={i} className="w-full flex items-center">
                 <div
@@ -151,7 +118,8 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
             ))}
           </div>
         </div>
-        <form onSubmit={handleSubmit}>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           {step === 1 && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -206,6 +174,7 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
               </div>
             </div>
           )}
+          
           {step === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -221,6 +190,7 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
               </div>
             </div>
           )}
+          
           {step === 3 && (
             <div className="space-y-4">
               <Tabs defaultValue="upload" className="w-full">
@@ -230,17 +200,17 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
                 </TabsList>
                 <TabsContent value="upload">
                   <div className="space-y-2">
-                    <Label htmlFor="trainingImages">Training Images (up to 400)</Label>
+                    <Label htmlFor="training_images">Training Images (up to 400)</Label>
                     <Input
-                      id="trainingImages"
-                      name="trainingImages"
+                      id="training_images"
+                      name="training_images"
                       type="file"
                       onChange={handleFileChange}
                       accept="image/*"
                       multiple
                     />
                     <p className="text-sm text-muted-foreground">
-                      Selected: {formData.trainingImages.length} images
+                      Selected: {formData.training_images.length} images
                     </p>
                   </div>
                 </TabsContent>
@@ -267,9 +237,10 @@ export default function StudentRegistrationForm({ onClose, initialData, onSubmit
           )}
         </form>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      
+      <CardFooter className="flex justify-end">
         {step > 1 && (
-          <Button onClick={handlePrevious} variant="outline">
+          <Button onClick={handlePrevious} variant="outline" className="mr-2">
             Previous
           </Button>
         )}
