@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
-import { PencilIcon, TrashIcon, UserPlus, Users, GraduationCap, ChevronsUpDown, Image as ImageIcon } from "lucide-react"
+import { PencilIcon, TrashIcon, UserPlus, Users, Image as ImageIcon } from "lucide-react"
 import axios from "axios"
 import StudentRegistrationForm from "./student-registration-form"
 
@@ -25,8 +25,8 @@ interface Student {
   standard: string;
   division: string;
   profile_photo: string;
-  height: number | null;
-  weight: number | null;
+  height: number | undefined;
+  weight: number | undefined;
   training_images: string[];
 }
 
