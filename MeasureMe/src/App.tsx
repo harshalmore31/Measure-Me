@@ -1,4 +1,3 @@
-import React from "react"
 import SchoolMeasurementApp from "./components/SchoolMeasurementApp"
 import './App.css';
 
