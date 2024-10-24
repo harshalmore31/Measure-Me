@@ -19,3 +19,12 @@ class TrainingImage(models.Model):
 
     def __str__(self):
         return f"Training image for {self.student.name}"
+
+class Measurement(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='measurements')
+    height = models.FloatField()
+    weight = models.FloatField()
+    timestamp = models.DateTimeField()
+
+    def __str__(self):
+        return f"Measurement for {self.student.name} at {self.timestamp}"

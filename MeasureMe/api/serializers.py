@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Student, TrainingImage
+from .models import Student, TrainingImage, Measurement
 from django.conf import settings
 
 class TrainingImageSerializer(serializers.ModelSerializer):
@@ -26,3 +26,8 @@ class StudentSerializer(serializers.ModelSerializer):
         if obj.profile_photo:
             return self.context['request'].build_absolute_uri(obj.profile_photo.url)
         return None
+
+class MeasurementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Measurement
+        fields = ['id', 'student', 'height', 'weight', 'timestamp']

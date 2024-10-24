@@ -59,11 +59,11 @@ export default function SchoolMeasurementApp() {
       </header>
       
       <main className="flex-grow w-full bg-white">
-        <div className="px-[190px] py-6 min-h-[calc(100vh-64px-56px)]">
+        <div className="px-4 md:px-[190px] py-6 min-h-[calc(100vh-64px-56px)]">
           {view === 'main' && (
             <>
-              <h2 className="text-2xl font-bold mb-2">School HW Measurement Tracking System</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">School HW Measurement Tracking System</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-6">
                 Simplified measuring and tracking height and weight for all students across various branches, in <span className="font-bold">one Click</span>
               </p>
             </>
