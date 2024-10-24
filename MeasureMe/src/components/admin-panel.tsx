@@ -30,14 +30,12 @@ interface Student {
   training_images: string[];
 }
 
-type SortKey = 'name' | 'roll_number' | 'standard' | 'division';
 
 export default function AdminPanel() {
   const [students, setStudents] = useState<Student[]>([])
   const [isRegistrationFormOpen, setIsRegistrationFormOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>(null)
 
   useEffect(() => {
     fetchStudents()
@@ -92,26 +90,12 @@ export default function AdminPanel() {
     }
   }
 
-  const handleSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  }
-
-  const sortedStudents = [...students].sort((a, b) => {
-    if (!sortConfig) return 0;
-    const { key, direction } = sortConfig;
-    if (a[key] < b[key]) return direction === 'ascending' ? -1 : 1;
-    if (a[key] > b[key]) return direction === 'ascending' ? 1 : -1;
-    return 0;
-  });
-
-  const filteredStudents = sortedStudents.filter(student =>
+ 
+  const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.roll_number.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
 
   const calculateAverageBMI = () => {
     if (students.length === 0) return "N/A";
